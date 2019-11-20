@@ -1,0 +1,3 @@
+/home/pi/noodle/build/CMakeFiles/rebuild_cache.dir
+/home/pi/noodle/build/CMakeFiles/noodle.dir
+/home/pi/noodle/build/CMakeFiles/edit_cache.dir
