@@ -2,8 +2,8 @@
 // Maintains a list of devices on the 1-wire bus and provides methods to
 // access features of the connected devices.
 
-#ifndef VIVARIA_ONEWIREMANAGER_H_
-#define VIVARIA_ONEWIREMANAGER_H_
+#ifndef NOODLE_ONEWIREMANAGER_H_
+#define NOODLE_ONEWIREMANAGER_H_
 
 #include <string>
 #include <vector>

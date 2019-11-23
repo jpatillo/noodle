@@ -1,5 +1,5 @@
-#ifndef VIVARIA_RES_INTEGERS_H_
-#define VIVARIA_RES_INTEGERS_H_
+#ifndef NOODLE_RES_INTEGERS_H_
+#define NOODLE_RES_INTEGERS_H_
 
 // Max db rows that can be sent to the web service at one time
 const unsigned int WEB_SYNC_ROW_LIMIT = 5;

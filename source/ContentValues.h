@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#ifndef VIVARIA_CONTENTVALUES_H_
-#define VIVARIA_CONTENTVALUES_H_
+#ifndef NOODLE_CONTENTVALUES_H_
+#define NOODLE_CONTENTVALUES_H_
 
 class ContentValues: public std::multimap<std::string,std::string> {
 

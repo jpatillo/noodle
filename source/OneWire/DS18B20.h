@@ -1,7 +1,7 @@
 // OneWireDevice.h
 
-#ifndef VIVARIA_DS18B20_H_
-#define VIVARIA_DS18B20_H_
+#ifndef NOODLE_DS18B20_H_
+#define NOODLE_DS18B20_H_
 
 #include "OneWireDevice.h"
 

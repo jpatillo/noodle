@@ -110,10 +110,10 @@ void setup(){
   }
 /*
   SimpleConfig privatedata, globaldata;
-  globaldata.setpath(vivaria_global_config);
+  globaldata.setpath(NOODLE_global_config);
   dmodel = globaldata.getvalue(DEVICE_MODEL);
   manufactured = globaldata.getvalue(MANUFACTURE_DATE);
-  privatedata.setpath(vivaria_config_file_path);
+  privatedata.setpath(NOODLE_config_file_path);
   appConfig(privatedata);
   sensorConfig(privatedata);
 */

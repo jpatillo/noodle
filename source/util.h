@@ -1,6 +1,6 @@
 
-#ifndef VIVARIA_UTIL_H
-#define VIVARIA_UTIL_H
+#ifndef NOODLE_UTIL_H
+#define NOODLE_UTIL_H
 
 #include <string>
 

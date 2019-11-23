@@ -2,7 +2,7 @@
 #define NOODLE_RES_STRINGS_H_
 
 // Raspberry Pi USERAGENT for HTTP communication
-static std::string USERAGENT = "Vivaria RPi 01";
+static std::string USERAGENT = "Noodle RPi 01";
 // API method
 static std::string TOPIC_TELEMETRY = "postTelemetry";
 static std::string TOPIC_SENSOR = "postSensor";
@@ -42,8 +42,8 @@ static std::string GCLOUD_API_ROOT = "GCLOUD_API_ROOT";
 static std::string GCLOUD_API_KEY = "GCLOUD_API_KEY";
 static std::string THINGSBOARD_URL = "THINGSBOARD_URL";
 static std::string THINGSBOARD_TOKEN = "THINGSBOARD_TOKEN";
-static std::string VIVARIAHOME_URL = "VIVARIAHOME_URL";
-static std::string VIVARIANODE_URL = "VIVARIANODE_URL";
+static std::string NOODLEHOME_URL = "NOODLEHOME_URL";
+static std::string NOODLENODE_URL = "NOODLENODE_URL";
 static std::string WEB_SYNC_INTERVAL = "WEB_SYNC_INTERVAL";
 static std::string CHECK_SENSORS_INTERVAL = "CHECK_SENSORS_INTERVAL";
 static std::string CHECK_MOUNT_INTERVAL = "CHECK_MOUNT_INTERVAL";

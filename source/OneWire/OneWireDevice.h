@@ -3,8 +3,8 @@
 //
 // A single instance represents a device connected on the 1-wire bus.
 /******************************************************************************/
-#ifndef VIVARIA_ONEWIREDEVICE_H_
-#define VIVARIA_ONEWIREDEVICE_H_
+#ifndef NOODLE_ONEWIREDEVICE_H_
+#define NOODLE_ONEWIREDEVICE_H_
 
 #include <string>
 

@@ -1,5 +1,5 @@
-#ifndef VIVARIA_SIMPLECONFIG_H_
-#define VIVARIA_SIMPLECONFIG_H_
+#ifndef NOODLE_SIMPLECONFIG_H_
+#define NOODLE_SIMPLECONFIG_H_
 
 #include <iostream>
 #include <fstream>
