@@ -5,11 +5,7 @@ project(noodle)
 set(NOODLE_VERSION_MAJOR 0)
 set(NOODLE_VERSION_MINOR 2)
 
-
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
-
-
 
 # check c++11 support
 include(CheckCXXCompilerFlag)
@@ -43,10 +39,17 @@ set(SOURCE_FILES source/main.cpp
 	source/OneWire/DS18B20.cpp
 	source/OneWire/OneWireDevice.cpp
 	source/OneWire/OneWireManager.cpp
-	source/util.cpp )
+	source/util.cpp
+  source/mqtt.cpp )
 
 # set OpenSSL if available
 add_definitions( -DOPEN_SSL=${OPEN_SSL} )
+
+# Mosquitto MQTT client
+find_package(Mosquitto REQUIRED)
+include_directories(${MOSQUITTO_INCLUDE_DIR})
+list(APPEND ADDITIONAL_LIBS ${MOSQUITTO_LIBRARIES})
+message(STATUS "libmosquitto: ${MOSQUITTO_INCLUDE_DIR} ${MOSQUITTO_LIBRARIES}")
 
 # pthreads
 find_package(Threads REQUIRED)
@@ -65,13 +68,12 @@ if(CURL_FOUND)
 endif()
 
 # Support for WiringPi
-find_package(WiringPi)
-if(WiringPi_FOUND)
-    include_directories(${WiringPi_INCLUDE_DIR})
-    list(APPEND ADDITIONAL_LIBS ${WiringPi_LIBRARIES})
-else()
-	  message(STATUS "WiringPi not found.")
-endif()
+find_package(WiringPi REQUIRED)
+include_directories(${WiringPi_INCLUDE_DIR})
+list(APPEND ADDITIONAL_LIBS ${WiringPi_LIBRARIES})
+message(STATUS "WiringPi: ${WiringPi_INCLUDE_DIR} ${WiringPi_LIBRARIES}")
+
+
 
 
 

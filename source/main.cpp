@@ -7,6 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <wiringPi.h>       // GPIO
+#include <mosquittopp.h>
 
 #include "ContentValues.h"  // Message data - map<string,string>
 #include "SimpleConfig.h"   // Read config file
@@ -15,6 +16,7 @@
 #include "res/strings.h"
 #include "res/integers.h"
 #include "util.h"
+#include "mqtt.h"
 
 using namespace std;
 
@@ -22,6 +24,7 @@ using namespace std;
 #define ONEWIRE_PIN 4
 #define RELAY_PIN_2 23
 
+#define NOODLE_config_file_path "config"
 
 OneWireManager owdevices;
 string deviceId;
@@ -31,6 +34,7 @@ unsigned int sensor_interval = DEFAULT_SENSOR_INTERVAL;
 unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
 bool terminaloutput = true;
 string dmodel, manufactured;
+Mqtt* communicator;
 
 // Called when user presses Ctrl-C
 void interruptHandler(int sig) {
@@ -87,10 +91,6 @@ void deactivateRelay(unsigned int pin) {
   digitalWrite( pin, HIGH );
 }
 
-void sensorConfig(SimpleConfig privatedata){
-
-}
-
 void setup(){
   // Handle ctrl+c
   signal (SIGINT, interruptHandler);
@@ -108,15 +108,20 @@ void setup(){
     cerr<<"ERROR: Device Id not found.";
     exit(0);
   }
-/*
-  SimpleConfig privatedata, globaldata;
-  globaldata.setpath(NOODLE_global_config);
-  dmodel = globaldata.getvalue(DEVICE_MODEL);
-  manufactured = globaldata.getvalue(MANUFACTURE_DATE);
+  
+  SimpleConfig privatedata;
   privatedata.setpath(NOODLE_config_file_path);
   appConfig(privatedata);
-  sensorConfig(privatedata);
-*/
+  
+
+  // Get the device model.
+  ifstream model("/sys/firmware/devicetree/base/model");
+  getline(model,dmodel);
+
+
+  mosqpp::lib_init();//TODO: put this line in the constructor?
+  communicator = new Mqtt(deviceId.c_str(),"jamespatillo.com");
+
   // Start timers
   time(&sensor_timer);
   time(&mount_timer);
@@ -162,9 +167,15 @@ void loop(){
           }
 
 
+          string topic = "noodle/" + deviceId + "/telemetry";
+          string payload = "{sensorid:" + device->get_serial() + ",temperature:" + to_string(device->get_celsiustemp()) + "}";
+
+          communicator->publish(topic,payload);
+
           // Print to screen
           //if(terminaloutput)
           cout<<date<<"\t|\t"<<device->get_serial()<<" \t|\t "<<device->get_celsiustemp()<<"C"<<endl;
+          
         }
       } // End 1-Wire devices
 
@@ -179,6 +190,7 @@ int main(void) {
 
   deactivateRelay(RELAY_PIN_1);
   deactivateRelay(RELAY_PIN_2);
+  mosqpp::lib_cleanup();
 
   return 0;
 } // main

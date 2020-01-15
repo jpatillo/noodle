@@ -19,7 +19,8 @@ find_path(WiringPi_INCLUDE_DIR wiringPi.h PATHS
         )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(WiringPi DEFAULT_MSG
+find_package_handle_standard_args(
+        WiringPi DEFAULT_MSG
         WiringPi_LIBRARIES
         WiringPi_INCLUDE_DIR
         )

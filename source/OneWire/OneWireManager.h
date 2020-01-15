@@ -9,6 +9,11 @@
 #include <vector>
 #include "OneWireDevice.h"
 
+const std::string SENSOR_DS2401 = "DS2401";
+const std::string SENSOR_DS2401_PREFIX = "01";
+const std::string SENSOR_DS18B20 = "DS18B20";
+const std::string SENSOR_DS18B20_PREFIX = "28";
+
 class OneWireManager {
 
   std::vector<OneWireDevice*> devicelist_;

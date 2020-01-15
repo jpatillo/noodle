@@ -8,9 +8,6 @@ const unsigned int WEB_SYNC_MSG_LIMIT = 5;
 // Time between sensor checks
 const unsigned int DEFAULT_SENSOR_INTERVAL = 300; // 5 minutes
 const unsigned int MAX_SENSOR_INTERVAL = 86400; // 1 day
-// Time between web service updates
-const unsigned int INT_WEB_SYNC_INTERVAL = 0; // no delay
-const unsigned int INT_WEB_SYNC_INTERVAL_MAX = 86400; // 1 day
 
 // Time between checking for currently connected sensors
 const unsigned int DEFAULT_MOUNT_INTERVAL = 600; // 10 minutes
