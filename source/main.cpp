@@ -18,13 +18,12 @@
 #include "util.h"
 #include "mqtt.h"
 
-using namespace std;
+using namespace std;// To use or not to use...
 
-#define RELAY_PIN_1 18
-#define ONEWIRE_PIN 4
-#define RELAY_PIN_2 23
+#define ONEWIRE_PIN 4 // hard coded from wiringPi
 
-#define NOODLE_config_file_path "config"
+
+#define NOODLE_config_file_path "config" // allow to be set by command line?
 
 OneWireManager owdevices;
 string deviceId;
