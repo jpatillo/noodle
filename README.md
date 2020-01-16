@@ -7,6 +7,8 @@ The Noodle Project is a pet snake environment controller. The project does thing
 ## TODO
 
 - Shut off heat sources if the temperature reading fails.
+- Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
+- Easy way to associate 1-wire sensor with relay.
 
 ## Resources
 
