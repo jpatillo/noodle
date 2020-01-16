@@ -56,6 +56,8 @@ protected:
 
   // Gets a list of connected devices from the 1-wire bus
   void GetDeviceList();
+  bool isDS2401(int index);
+  bool isDS18B20(int index);
 
 };
 

@@ -33,7 +33,7 @@ using namespace std;
         // Get device type
         string serial(ent->d_name);
         if(serial=="." || serial==".." || serial=="w1_bus_master1");
-        else if(serial.substr(0,2)=="28"){
+        else if(serial.substr(0,2)==SENSOR_DS2401_PREFIX){
           OneWireDevice *node = new DS18B20(serial);
           devicelist_.push_back(node);
         }
@@ -53,11 +53,11 @@ using namespace std;
   int OneWireManager::count_devices(){return devicelist_.size();}
 
   bool OneWireManager::is_family(int index, string code){
-    return get_serial(index).substr(1,2)==code;
+    return get_serial(index).substr(0,2)==code;
   }
 
   string OneWireManager::get_family(int index){
-    return get_serial(index).substr(1,2);
+    return get_serial(index).substr(0,2);
   }
 
   // This method returns a formatted serial that is ready for sync or display.
@@ -65,27 +65,36 @@ using namespace std;
   string OneWireManager::get_serial(int index){
     // TODO use PROTOCOL_1WIRE instead of hard-coded value
     string serial = devicelist_.at(index)->get_serial();
-    serial = "1" + serial.erase(2,1);
+  //  cout<<"serial before: "<<serial;
+  //  serial = "1" + serial.erase(2,1);
+  //  cout<<" serial after: "<<serial<<endl;
     return serial;
   }
 
   double OneWireManager::get_fahrenheittemp(int index) {
-    if(devicelist_.at(index)->get_serial().substr(0,2)=="28")
+    if(isDS18B20(index))
       return ((DS18B20*)devicelist_.at(index))->get_fahrenheittemp();
     else return -1;
   }
 
   //TODO return an error condition that can not be a valid temp
   double OneWireManager::get_celsiustemp(int index) {
-    if(devicelist_.at(index)->get_serial().substr(0,2)=="28")
+    if(isDS18B20(index))
       return ((DS18B20*)devicelist_.at(index))->get_celsiustemp();
     else return -1;
   }
 
   long OneWireManager::get_rawtemp(int index) {
-    if(devicelist_.at(index)->get_serial().substr(0,2)=="28")
+    if(isDS18B20(index))
       return ((DS18B20*)devicelist_.at(index))->get_rawtemp();
     else return -1;
+  }
+
+  bool OneWireManager::isDS2401(int index){
+    return devicelist_.at(index)->get_serial().substr(0,2)==SENSOR_DS2401_PREFIX;
+  }
+  bool OneWireManager::isDS18B20(int index){
+    return devicelist_.at(index)->get_serial().substr(0,2)==SENSOR_DS18B20_PREFIX;
   }
 
   OneWireDevice* OneWireManager::get_device(std::string serial){
@@ -98,7 +107,7 @@ using namespace std;
 
   //TODO validate the serial
   int OneWireManager::get_index(string serial) {
-    serial = serial.substr(1,string::npos);
+   // serial = serial.substr(1,string::npos);
     for(vector<OneWireDevice*>::iterator iterator = devicelist_.begin();iterator!=devicelist_.end();++iterator)
       if((*iterator)->get_serial()==serial)
         return distance(devicelist_.begin(),iterator);
@@ -120,6 +129,6 @@ using namespace std;
 
   void OneWireManager::DebugPrintDeviceTemps(){
     for(vector<OneWireDevice*>::const_iterator iterator = devicelist_.begin();iterator!=devicelist_.end();++iterator)
-        if((*iterator)->get_serial().substr(0,2)=="28")
+        if((*iterator)->get_serial().substr(0,2)==SENSOR_DS2401_PREFIX)
           cout<< dynamic_cast<DS18B20*>(*iterator)->get_rawtemp()<<endl;
   }

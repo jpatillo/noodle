@@ -3,7 +3,7 @@
 #include <string>
 
 Mqtt::Mqtt(const char *id, const char *host, int port) : mosquittopp(id) {
-    _id = string(id);
+    _id = std::string(id);
     int keepalive = 120;
     // Connect to the broker
 
@@ -15,9 +15,7 @@ Mqtt::Mqtt(const char *id, const char *host, int port) : mosquittopp(id) {
 }
 Mqtt::~Mqtt(){
     std::cout << "Stopping the connection." << std::endl;
-    mosquitto_disconnect();
-    mosquitto_destroy();
-	mosquitto_lib_cleanup();
+    disconnect();
 }
 
 void Mqtt::on_connect(int rc) {
@@ -27,8 +25,8 @@ void Mqtt::on_connect(int rc) {
         // Subscribe to topics here.
         // ...
 
-        string status = "{msg:connected}";
-        mosquitto_publish(NULL, "noodle/"+_id+"/status", strlen(status), status, 0, false);
+        std::string status = "{msg:connected}";
+        publish("noodle/"+_id+"/status",status);
     } else {
         //TODO output to stderr?
         std::cout<<"Connect failed"<<std::endl;
@@ -68,6 +66,6 @@ void Mqtt::on_log(int level, const char *str)
 
 /* Easy publishing with typical params. */
 int Mqtt::publish(const std::string topic, const std::string message) {
-    publish(NULL, topic.c_str(), message.length(), message.c_str(), 0, false);
+    mosquittopp::publish(NULL, topic.c_str(), message.length(), message.c_str(), 0, false);
     return 0;//TODO: error checking
 }

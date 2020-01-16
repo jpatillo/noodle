@@ -23,7 +23,7 @@ class OneWireDevice {
 
     // Sets the device's serial number. Use this method if it has not already
     // been set in the constructor OneWireDevice(std::string serial)
-    void set_serial(std::string serial);
+    int set_serial(std::string serial);
 
     // Return the device's serial number
     std::string get_serial() const;

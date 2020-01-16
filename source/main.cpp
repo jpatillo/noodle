@@ -51,7 +51,6 @@ int getDId(){
   for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS2401_PREFIX)){
         deviceId = owdevices.get_serial(c);
-        cout << "Device: " << deviceId << endl;
         return 0;
     }
   }
@@ -150,7 +149,7 @@ void loop(){
 
           //warm side
           if(device->get_serial()=="28-000006de3271") {
-            cout<<"🌞 ";
+            cout<<"Warm ";
             if(device->get_rawtemp()>29444) //85F
               deactivateRelay(RELAY_PIN_1);
             if(device->get_rawtemp()<25555) //78F
@@ -159,7 +158,7 @@ void loop(){
 
           //cool side
           if(device->get_serial()=="28-000006ddc23c") {
-            cout<<"❄ ";
+            cout<<"Cool ";
             if(device->get_rawtemp()>21111) //70F
               deactivateRelay(RELAY_PIN_2);
             if(device->get_rawtemp()<15555) //60F
@@ -190,6 +189,7 @@ int main(void) {
 
   deactivateRelay(RELAY_PIN_1);
   deactivateRelay(RELAY_PIN_2);
+  delete communicator;
   mosqpp::lib_cleanup();
 
   return 0;

@@ -8,9 +8,11 @@
 
   OneWireDevice::~OneWireDevice(){}
 
-  void OneWireDevice::set_serial(std::string serial){
+  int OneWireDevice::set_serial(std::string serial){
+    if(serial_.length()>0) return 1;
     serial_ = serial;
     BuildDriverPath();
+    return 0;
   }
 
   std::string OneWireDevice::get_serial() const {
