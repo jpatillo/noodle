@@ -2,6 +2,8 @@
 
 The Noodle Project is a pet snake environment controller. The project does things like act as a thermostat for heating elements and record environment humidity and temperature.
 
+The latest (seemingly) stable build is in the dev branch.
+
 *Just a note:* CMake is a real drain on my life.
 
 ## TODO
