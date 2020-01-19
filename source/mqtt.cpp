@@ -1,13 +1,13 @@
 #include <iostream>
 #include "mqtt.h"
-#include <string>
 
-Mqtt::Mqtt(const char *id, const char *host, int port) : mosquittopp(id) {
-    _id = std::string(id);
+
+Mqtt::Mqtt(std::string id, std::string host, int port) : mosquittopp(id.c_str()) {
+    _id = id;
     int keepalive = 120;
     // Connect to the broker
 
-    if(connect_async(host,port,keepalive))
+    if(connect_async(host.c_str(),port,keepalive))
         throw "Unable to connect to server.";
 
     if(loop_start())
@@ -26,7 +26,7 @@ void Mqtt::on_connect(int rc) {
         // ...
 
         std::string status = "{msg:connected}";
-        publish("noodle/"+_id+"/status",status);
+        publish("status",status);
     } else {
         //TODO output to stderr?
         std::cout<<"Connect failed"<<std::endl;
@@ -64,8 +64,11 @@ void Mqtt::on_log(int level, const char *str)
     //mosquitto_publish(	mosq, NULL, "garage/34567/log", strlen(str), str, 0, false);
 }
 
-/* Easy publishing with typical params. */
+/* Easy publishing with typical params. The topic prefix (noodle/DEVICE_ID/) is automatically added.
+@param topic i.e. "telemetry"
+@param message (optional) The message payload to send. */
 int Mqtt::publish(const std::string topic, const std::string message) {
-    mosquittopp::publish(NULL, topic.c_str(), message.length(), message.c_str(), 0, false);
+    std::string t = "noodle/" + _id + "/" + topic;
+    mosquittopp::publish(NULL, t.c_str(), message.length(), message.c_str(), 0, false);
     return 0;//TODO: error checking
 }

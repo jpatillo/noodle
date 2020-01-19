@@ -8,7 +8,7 @@ class Mqtt : public mosqpp::mosquittopp {
     std::string _id;
 
 public:
-    Mqtt(const char *id, const char *host, int port=1883);
+    Mqtt(std::string id, std::string host, int port=1883);
     ~Mqtt();
 
     void on_connect(int rc);
@@ -17,7 +17,7 @@ public:
     void on_subscribe(int mid, int qos_count, const int *granted_qos);
     void on_log(int level, const char *str);
 
-    int publish(const std::string topic, const std::string message);
+    int publish(const std::string topic, const std::string message="");
 
 };
 
