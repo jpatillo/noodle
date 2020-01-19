@@ -15,24 +15,27 @@ For testing, use run.sh.
 
 ### Local testing
 
-set Daemon flag off `-DDAEMON=OFF`
-
-run the install
-
 ```bash
+#!/usr/bin/env bash
+
+mkdir -p build
+cd build
+cmake -DCMAKE_BUILD_TYPE=debug -DDAEMON=OFF ../
 make
 ./noodle
 ```
 
 ### Daemon testing
 
-set Daemon flag on `-DDAEMON=ON`
-
-run the install
-
 ```bash
+#!/usr/bin/env bash
+
+mkdir -p build
+cd build
+cmake -DCMAKE_BUILD_TYPE=debug -DDAEMON=ON ../
 make
 sudo make install
+/usr/local/bin/noodle
 ```
 
 ### Release
