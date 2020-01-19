@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <utility>
+#include <fstream>
 
 #include <signal.h>         // Handle Ctrl-C
 #include <time.h>
@@ -9,39 +10,43 @@
 #include <wiringPi.h>       // GPIO
 #include <mosquittopp.h>
 
-#include "ContentValues.h"  // Message data - map<string,string>
-#include "SimpleConfig.h"   // Read config file
-#include "OneWire/OneWireManager.h" // DS18B20, DS2401
-#include "OneWire/DS18B20.h"
+#include "include/config.h"
+
 #include "res/strings.h"
 #include "res/integers.h"
 #include "util.h"
 #include "mqtt.h"
+#include <INIReader.h>
+#include <OneWireManager.h> // DS18B20, DS2401
+#include <DS18B20.h>
+#include "relay.h"
+#include "thermostat.h"
 
 using namespace std;// To use or not to use...
 
-#define ONEWIRE_PIN 4 // hard coded from wiringPi
+#define terminaloutput true
 
-
-#define NOODLE_config_file_path "config" // allow to be set by command line?
-
-OneWireManager owdevices;
-string deviceId;
 int8_t volatile seagulls = 1; // loop control
-time_t sensor_timer, web_timer, mount_timer;
-unsigned int sensor_interval = DEFAULT_SENSOR_INTERVAL;
-unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
-bool terminaloutput = true;
-string dmodel, manufactured;
+time_t sensor_timer, mount_timer;
+
 Mqtt* communicator;
+OneWireManager owdevices;
+std::vector<relay> relays;
+std::vector<thermostat> thermos;
+
+struct conf {
+  string device_id;
+  string device_model;
+  unsigned int sensor_interval = DEFAULT_SENSOR_INTERVAL;
+  unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
+  string broker;
+}state;
+
 
 // Called when user presses Ctrl-C
 void interruptHandler(int sig) {
-    if(sig==SIGINT) {
-      if(terminaloutput)
-        cout<<endl<<"Received kill signal."<<endl;
-
-      seagulls = 0;
+  if(sig==SIGINT) {
+    seagulls = 0;
   }
 }
 
@@ -49,45 +54,85 @@ void interruptHandler(int sig) {
 int getDId(){
   for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS2401_PREFIX)){
-        deviceId = owdevices.get_serial(c);
+        state.device_id = owdevices.get_serial(c);
         return 0;
     }
   }
   return 1;
 }
 
-void appConfig(SimpleConfig privatedata){
-  if(privatedata.hasKey(CHECK_SENSORS_INTERVAL)){
-    //TODO catch error if the value can not be converted to int
-    unsigned int e = privatedata.getintvalue(CHECK_SENSORS_INTERVAL);
-    if(e>MAX_SENSOR_INTERVAL)
-      sensor_interval = DEFAULT_SENSOR_INTERVAL;
-    else
-      sensor_interval = e;
+void appConfig(std::string config_path){
+ 
+  INIReader config_reader(config_path);
+ 
+  if(config_reader.ParseError() || config_reader.GetSections().empty()){
+    cout<<"Error reading config.";
+    exit(0);
   }
 
-  if(privatedata.hasKey(CHECK_MOUNT_INTERVAL)){
-    //TODO catch error if the value can not be converted to int
-    unsigned int e = privatedata.getintvalue(CHECK_MOUNT_INTERVAL);
-    if(e>MAX_MOUNT_INTERVAL)
-      mount_interval = DEFAULT_MOUNT_INTERVAL;
-    else
-      mount_interval = e;
+  cout<<"Found "<<config_reader.GetSections().size()<<" sections."<<endl;
+
+  std::set<std::string>::iterator it;
+  std::set<std::string> sections = config_reader.GetSections(); //not copying this was giving a segmentation fault
+  
+  for (it = sections.begin(); it !=sections.end(); ++it)
+  {
+
+    if((*it)=="relays"){
+
+      std::set<std::string>::iterator field;
+      std::set<std::string> fields = config_reader.GetFields((*it));
+
+      for (field = fields.begin(); field != fields.end(); field++)
+      {
+        if(int pin = config_reader.GetInteger((*it), (*field),0)){//could just get the value if 'field' and convert to int
+         //TODO: more pin validity checks
+          relay r(pin);
+          relays.push_back(r);
+        }
+      }
+    }
+    else if((*it)=="timers"){
+      int timz = config_reader.GetInteger((*it),"CHECK_SENSOR_INTERVAL",DEFAULT_SENSOR_INTERVAL);
+      cout<<"config sensor interval "<<timz;
+      if(timz>MAX_SENSOR_INTERVAL || timz<MIN_SENSOR_INTERVAL)timz=DEFAULT_SENSOR_INTERVAL;
+      state.sensor_interval = timz;
+      cout<<" saved sensor interval "<< state.sensor_interval;
+
+      timz = config_reader.GetInteger((*it),"CHECK_MOUNT_INTERVAL",DEFAULT_MOUNT_INTERVAL);
+      if(timz>MAX_MOUNT_INTERVAL || timz<MIN_MOUNT_INTERVAL)timz=DEFAULT_MOUNT_INTERVAL;
+      state.mount_interval = timz;
+    }
+    else if((*it)=="mqtt"){
+      state.broker = config_reader.Get("mqtt","BROKER","");
+    }
+    else if((*it)=="thermostat"){
+      std::set<std::string>::iterator field;
+      std::set<std::string> fields = config_reader.GetFields((*it));
+
+      for (field = fields.begin(); field != fields.end(); field++)
+      {
+        if(int pin = config_reader.GetInteger((*it), (*field),0)){//could just get the value if 'field' and convert to int
+          //TODO: more pin validity checks
+          thermostat t(*field,pin);
+          thermos.push_back(t);
+        }
+      }
+    }
+    else if((*it)=="hot"){//will cause an issue if thermostat has not been created
+      
+    }
+    else if((*it)=="cold"){
+    
+    }
+    else {
+      cout << "Unknown configuration." << endl;
+    }
+
   }
 
 }
 
-void setRelayPin(unsigned int pin){
-  pinMode( pin, OUTPUT );
-}
-
-void activateRelay(unsigned int pin) {
-  digitalWrite( pin, LOW );
-}
-
-void deactivateRelay(unsigned int pin) {
-  digitalWrite( pin, HIGH );
-}
 
 void setup(){
   // Handle ctrl+c
@@ -95,30 +140,27 @@ void setup(){
 
   // Initialize GPIO
   wiringPiSetupGpio();// TODO error check
-  pinMode(ONEWIRE_PIN, INPUT); // WiringPi hardcodes pin 4 to 1-wire
-  setRelayPin(RELAY_PIN_1);
-  setRelayPin(RELAY_PIN_2);
-
-
+ 
   // Get all sensors on the 1-wire bus
-  owdevices.LoadAvailableDevices();
+  owdevices.init();
+
   if(getDId()>0) {
     cerr<<"ERROR: Device Id not found.";
     exit(0);
   }
   
-  SimpleConfig privatedata;
-  privatedata.setpath(NOODLE_config_file_path);
-  appConfig(privatedata);
-  
+  cout << "Reading config file...";
+  appConfig(NOODLE_CONFIG_LOCATION);
+  cout <<  "Done." << endl;
 
   // Get the device model.
-  ifstream model("/sys/firmware/devicetree/base/model");
-  getline(model,dmodel);
+  ifstream model(DEVICE_MODEL_PATH);
+  getline(model,state.device_model);
 
-
-  mosqpp::lib_init();//TODO: put this line in the constructor?
-  communicator = new Mqtt(deviceId.c_str(),"jamespatillo.com");
+  if(state.broker.length()){
+    mosqpp::lib_init();//TODO: put this line in the constructor?
+    communicator = new Mqtt(state.device_id,state.broker);
+  }
 
   // Start timers
   time(&sensor_timer);
@@ -128,14 +170,14 @@ void setup(){
 void loop(){
 
     // Find out what sensors are currently connected
-    if(difftime(time(0),mount_timer) > mount_interval) {
+    if(difftime(time(0),mount_timer) > state.mount_interval) {
       owdevices.LoadAvailableDevices();
 
       time(&mount_timer);
     }
 
     // Get sensor values
-    if(difftime(time(0),sensor_timer) > sensor_interval) {
+    if(difftime(time(0),sensor_timer) > state.sensor_interval) {
       // 1-Wire devices
       for(int c=0;c<owdevices.count_devices();c++){
         // DS18B20
@@ -144,52 +186,35 @@ void loop(){
           char date[20];
           get_formatnowdate(date,20);
 
-          DS18B20* device = dynamic_cast<DS18B20*>(owdevices.get_device(c));
+          DS18B20* device = (DS18B20*)owdevices.get_device(c);
+         
+          string payload = "{sensorid:" + owdevices.get_serial(c) + ",temperature:" + to_string(device->get_celsiustemp()) + "}";
+          communicator->publish("telemetry",payload);
 
-          //warm side
-          if(device->get_serial()=="28-000006de3271") {
-            cout<<"Warm ";
-            if(device->get_rawtemp()>29444) //85F
-              deactivateRelay(RELAY_PIN_1);
-            if(device->get_rawtemp()<25555) //78F
-              activateRelay(RELAY_PIN_1);
-          }
-
-          //cool side
-          if(device->get_serial()=="28-000006ddc23c") {
-            cout<<"Cool ";
-            if(device->get_rawtemp()>21111) //70F
-              deactivateRelay(RELAY_PIN_2);
-            if(device->get_rawtemp()<15555) //60F
-              activateRelay(RELAY_PIN_2);
-          }
-
-
-          string topic = "noodle/" + deviceId + "/telemetry";
-          string payload = "{sensorid:" + device->get_serial() + ",temperature:" + to_string(device->get_celsiustemp()) + "}";
-
-          communicator->publish(topic,payload);
-
-          // Print to screen
-          //if(terminaloutput)
-          cout<<date<<"\t|\t"<<device->get_serial()<<" \t|\t "<<device->get_celsiustemp()<<"C"<<endl;
-          
         }
-      } // End 1-Wire devices
+      } 
+
+      // Check all the thermostats.
+      for(std::vector<thermostat>::iterator i = thermos.begin(); i!=thermos.end(); i++){
+        (*i).check();
+        //TODO: report status
+      }
 
       time(&sensor_timer);
-    } // End get sensor values
+    }
 
+}
+
+void cleanup(){
+  if(communicator!=NULL){
+    delete communicator;
+    mosqpp::lib_cleanup();
+  }
 }
 
 int main(void) {
   setup();
   while(seagulls) { loop(); }
-
-  deactivateRelay(RELAY_PIN_1);
-  deactivateRelay(RELAY_PIN_2);
-  delete communicator;
-  mosqpp::lib_cleanup();
-
+  cleanup();
   return 0;
-} // main
+}
