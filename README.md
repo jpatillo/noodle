@@ -8,7 +8,36 @@ The Noodle Project is a pet snake environment controller. The project does thing
 
 - Shut off heat sources if the temperature reading fails.
 - Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
-- Easy way to associate 1-wire sensor with relay.
+
+## Build
+
+For testing, use run.sh.
+
+### Local testing
+
+set Daemon flag off `-DDAEMON=OFF`
+
+run the install
+
+```bash
+make
+./noodle
+```
+
+### Daemon testing
+
+set Daemon flag on `-DDAEMON=ON`
+
+run the install
+
+```bash
+make
+sudo make install
+```
+
+### Release
+
+`./build.sh`
 
 ## Resources
 
