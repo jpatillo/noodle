@@ -1,2 +1,60 @@
+###############################################################
+# Timers
+# How often we should check status of components.
+# Time is in seconds.
+###############################################################
+[timers]
+
+# Poll Sensors (i.e. get temperature).
+CHECK_SENSOR_INTERVAL=300
+
+# Check the status of the mounted sensors.
+CHECK_MOUNT_INTERVAL=600
+
+###############################################################
+# Relays (switches)
+# Pins that have relays connected.
+###############################################################
+[relays]
+
 relay1=18
+
 relay2=23
+
+###############################################################
+# MQTT
+# The net connection.
+###############################################################  
+[mqtt]
+
+BROKER=jamespatillo.com
+
+###############################################################
+# Thermostat
+# Associate a DS18B20 with a relay (switch) to control a heat
+# source.
+#
+# sensor_id=relay_pin
+###############################################################
+[thermostat]
+
+28-000006de3271=18
+28-000006ddc23c=23
+
+###############################################################
+# Hot
+# Set heat limit for thermostat.
+#
+# sensor_id=degrees_celsius
+###############################################################
+[hot]
+
+
+
+###############################################################
+# Cold
+# Set the cold limit for thermostat.
+#
+# sensor_id=degrees_celsius
+###############################################################
+[cold]
