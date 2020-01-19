@@ -1,13 +1,7 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.13.4)
 project(noodle)
 
-# Version
-set(NOODLE_VERSION_MAJOR 0)
-set(NOODLE_VERSION_MINOR 2)
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
-
-# check c++11 support
+# check C++11 support
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 if(COMPILER_SUPPORTS_CXX11)
@@ -16,8 +10,41 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-OPTION(ENABLE_OPENSSL "Enable use of OpenSSL" OFF)
-OPTION(DAEMON "Build Noodle client as daemon" OFF)
+
+#######################################################################################
+# Command Line Args
+#######################################################################################
+
+option(ENABLE_OPENSSL "Enable use of OpenSSL" OFF)
+option(DAEMON "Build Noodle client as daemon" OFF)
+
+#######################################################################################
+# Config
+#######################################################################################
+
+# Version
+set(NOODLE_VERSION_MAJOR 0)
+set(NOODLE_VERSION_MINOR 2)
+
+if(DAEMON)
+  set(NOODLE_CONFIG_LOCATION /etc/${PROJECT_NAME})
+else()
+  set(NOODLE_CONFIG_LOCATION ".")
+endif()
+
+# Create custom header file with build info.
+configure_file(source/config.h.in include/config.h)
+
+#######################################################################################
+# Library Checks
+#######################################################################################
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
+
+# Require WiringPi
+find_package(WiringPi REQUIRED)
+include_directories(${WiringPi_INCLUDE_DIR})
+list(APPEND ADDITIONAL_LIBS ${WiringPi_LIBRARIES})
+message(STATUS "WiringPi: ${WiringPi_INCLUDE_DIR} ${WiringPi_LIBRARIES}")
 
 # Find OpenSSL
 IF(ENABLE_OPENSSL)
@@ -33,15 +60,6 @@ IF(ENABLE_OPENSSL)
 ELSE()
   SET(OPEN_SSL 0)
 ENDIF()
-
-set(SOURCE_FILES source/main.cpp
-	source/ContentValues.cpp
-	source/OneWire/DS18B20.cpp
-	source/OneWire/OneWireDevice.cpp
-	source/OneWire/OneWireManager.cpp
-	source/util.cpp
-  source/mqtt.cpp )
-
 # set OpenSSL if available
 add_definitions( -DOPEN_SSL=${OPEN_SSL} )
 
@@ -54,7 +72,7 @@ message(STATUS "libmosquitto: ${MOSQUITTO_INCLUDE_DIR} ${MOSQUITTO_LIBRARIES}")
 # pthreads
 find_package(Threads REQUIRED)
 if(THREADS_HAVE_PTHREAD_ARG)
-	target_compile_options(PUBLIC noodle "-pthread")
+	target_compile_options(PUBLIC ${PROJECT_NAME} "-pthread")
 endif()
 if(CMAKE_THREAD_LIBS_INIT)
 	list(APPEND ADDITIONAL_LIBS ${CMAKE_THREAD_LIBS_INIT})
@@ -67,28 +85,47 @@ if(CURL_FOUND)
 	list(APPEND ADDITIONAL_LIBS ${CURL_LIBRARIES})
 endif()
 
-# Support for WiringPi
-find_package(WiringPi REQUIRED)
-include_directories(${WiringPi_INCLUDE_DIR})
-list(APPEND ADDITIONAL_LIBS ${WiringPi_LIBRARIES})
-message(STATUS "WiringPi: ${WiringPi_INCLUDE_DIR} ${WiringPi_LIBRARIES}")
+
+#######################################################################################
+# Locate files for build.
+#######################################################################################
 
 
+set(SOURCE_FILES source/main.cpp
+	source/util.cpp
+  source/mqtt.cpp )
+
+add_subdirectory(lib/inih/cpp)
+add_subdirectory(lib/OneWire)
 
 
+#######################################################################################
+# Build/Install
+#######################################################################################
 
-
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} ${ADDITIONAL_LIBS})
+target_link_libraries(${PROJECT_NAME} inih_pp)
+target_link_libraries(${PROJECT_NAME} OneWire)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR})
 
 if(DAEMON)
-    # daemon service that can be installed as a linux service
-    add_executable(noodle ${SOURCE_FILES})
-    target_link_libraries(noodle ${ADDITIONAL_LIBS})
-    set_target_properties(noodle PROPERTIES COMPILE_DEFINITIONS "DAEMON=1")
+  set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "DAEMON=1")
 
-    install(TARGETS noodle RUNTIME DESTINATION bin)
-    install(FILES "${CMAKE_SOURCE_DIR}/install/raspberry/noodle" DESTINATION /etc/init.d)
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+  install(FILES "${CMAKE_SOURCE_DIR}/install/config" DESTINATION ${NOODLE_CONFIG_LOCATION})
+  install(FILES "${CMAKE_SOURCE_DIR}/install/noodle.service" DESTINATION /etc/systemd/system)
+
 else()
-    add_executable(noodle ${SOURCE_FILES})
-    target_link_libraries(noodle ${ADDITIONAL_LIBS})
-    set_target_properties(noodle PROPERTIES COMPILE_DEFINITIONS "DAEMON=0")
+  # what is this line doing?
+  set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "DAEMON=0")
+
+  # Copy the config file
+  add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+      ${CMAKE_SOURCE_DIR}/install/config
+      ${CMAKE_CURRENT_BINARY_DIR}/${NOODLE_CONFIG_LOCATION}
+  )
 endif()
+
