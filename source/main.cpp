@@ -1,6 +1,7 @@
 // Program Entry
 
 #include <iostream>
+#include <sstream>
 #include <utility>
 #include <fstream>
 
@@ -179,6 +180,8 @@ void loop(){
     // Get sensor values
     if(difftime(time(0),sensor_timer) > state.sensor_interval) {
       // 1-Wire devices
+      ostringstream payload; //since we are only reading from DS18B20, we will batch all of their telemetry and publish at once.
+      payload <<"[";
       for(int c=0;c<owdevices.count_devices();c++){
         // DS18B20
         if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX)){
@@ -188,11 +191,13 @@ void loop(){
 
           DS18B20* device = (DS18B20*)owdevices.get_device(c);
          
-          string payload = "{sensorid:" + owdevices.get_serial(c) + ",temperature:" + to_string(device->get_celsiustemp()) + "}";
-          communicator->publish("telemetry",payload);
-
+          if(c>0)payload<<",";
+          payload << "{\"sensorid\":\"" << owdevices.get_serial(c) << "\",\"temperature\":" << device->get_celsiustemp() << "}";
+          
         }
       } 
+      payload<<"]";
+      communicator->publish("telemetry",payload.str());
 
       // Check all the thermostats.
       for(std::vector<thermostat>::iterator i = thermos.begin(); i!=thermos.end(); i++){

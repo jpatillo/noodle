@@ -25,7 +25,7 @@ void Mqtt::on_connect(int rc) {
         // Subscribe to topics here.
         // ...
 
-        std::string status = "{msg:connected}";
+        std::string status = "{\"msg\":\"connected\"}";
         publish("status",status);
     } else {
         //TODO output to stderr?
