@@ -6,7 +6,7 @@
 [timers]
 
 # Poll Sensors (i.e. get temperature).
-CHECK_SENSOR_INTERVAL=300
+CHECK_SENSOR_INTERVAL=120
 
 # Check the status of the mounted sensors.
 CHECK_MOUNT_INTERVAL=600
