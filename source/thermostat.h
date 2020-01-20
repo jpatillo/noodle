@@ -23,4 +23,6 @@ public:
         else ;
     }
     bool isOn(){return _relay.isOn();}
+    double get_temperature(){return _temp.get_celsiustemp();}
+    std::string get_serial(){return _temp.get_serial();}
 };
