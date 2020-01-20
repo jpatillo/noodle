@@ -6,7 +6,12 @@ The latest (seemingly) stable build is in the dev branch.
 
 *Just a note:* CMake is a real drain on my life.
 
+The device currently publishes data frequently. This is desirable for something like real time reporting. Two minutes seems like an appropriate interval for this project.
+
 ## TODO
+
+- new methodology for a datastructure to hold sensors and thermostats. right now the same sensors are treated as independent sensors and as part of a thermostat.
+  - this is cumbersome for telemetry reporting
 
 - Shut off heat sources if the temperature reading fails.
 - Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
