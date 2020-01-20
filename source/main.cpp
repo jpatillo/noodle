@@ -196,14 +196,18 @@ void loop(){
           
         }
       } 
-      payload<<"]";
-      communicator->publish("telemetry",payload.str());
+     
 
       // Check all the thermostats.
       for(std::vector<thermostat>::iterator i = thermos.begin(); i!=thermos.end(); i++){
         (*i).check();
         //TODO: report status
+        payload<<",";
+        payload << "{\"sensorid\":\"" << (*i).get_serial() << "\",\"temperature\":" << (*i).get_temperature() << ",\"heating\":" << (*i).isOn() << "}";
       }
+
+       payload<<"]";
+      communicator->publish("telemetry",payload.str());
 
       time(&sensor_timer);
     }
