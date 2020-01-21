@@ -32,11 +32,11 @@ public:
 
   void UnloadDevices();
 
-  OneWireDevice* get_device(std::string serial);
+  OneWireDevice* get_device(std::string id);
   OneWireDevice* get_device(int index);
 
-  // Returns the index of the device with serial in the device list.
-  int get_index(std::string serial);
+  // Returns the index of the device with id in the device list.
+  int get_index(std::string id);
 
   int count_devices();
 
@@ -44,17 +44,11 @@ public:
 
   std::string get_family(int index);
 
-  std::string get_serial(int index);
+  std::string get_id(int index);
 
-  double get_fahrenheittemp(int index);
-
-  double get_celsiustemp(int index);
-
-  long get_rawtemp(int index);
-
-  void DebugPrintSerial(int index);
+  void DebugPrintid(int index);
   void DebugPrintTemp(int index);
-  void DebugPrintDeviceSerials();
+  void DebugPrintDeviceids();
   void DebugPrintDeviceTemps();
 
 protected:

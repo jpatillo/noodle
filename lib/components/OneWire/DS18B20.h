@@ -8,7 +8,7 @@
 class DS18B20: public OneWireDevice {
 
   public:
-    DS18B20(std::string serial);
+    DS18B20(std::string id);
     ~DS18B20();
     double get_fahrenheittemp();
     double get_fahrenheittemp(long t);

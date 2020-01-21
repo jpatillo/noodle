@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdlib.h>
 
-DS18B20::DS18B20(std::string serial):OneWireDevice(serial){}
+DS18B20::DS18B20(std::string id):OneWireDevice(id){}
 DS18B20::~DS18B20(){}
 
 double DS18B20::get_fahrenheittemp(){

@@ -22,6 +22,8 @@
 #include <DS18B20.h>
 #include "relay.h"
 #include "thermostat.h"
+#include <map>
+#include "utils.h"
 
 using namespace std;// To use or not to use...
 
@@ -33,7 +35,8 @@ time_t sensor_timer, mount_timer;
 Mqtt* communicator;
 OneWireManager owdevices;
 std::vector<relay> relays;
-std::vector<thermostat> thermos;
+
+std::map<std::string,component*> widgets;
 
 struct conf {
   string device_id;
@@ -55,7 +58,7 @@ void interruptHandler(int sig) {
 int getDId(){
   for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS2401_PREFIX)){
-        state.device_id = owdevices.get_serial(c);
+        state.device_id = owdevices.get_id(c);
         return 0;
     }
   }
@@ -115,10 +118,11 @@ void appConfig(std::string config_path){
       {
         if(int pin = config_reader.GetInteger((*it), (*field),0)){//could just get the value if 'field' and convert to int
           //TODO: more pin validity checks
-          thermostat t(*field,pin);
-          thermos.push_back(t);
+          thermostat* t = new thermostat(*field,pin);
+          widgets.insert( pair<std::string,component*>( t->get_id(), t ));
         }
       }
+     
     }
     else if((*it)=="hot"){//will cause an issue if thermostat has not been created
       
@@ -150,10 +154,8 @@ void setup(){
     exit(0);
   }
   
-  cout << "Reading config file...";
   appConfig(NOODLE_CONFIG_LOCATION);
-  cout <<  "Done." << endl;
-
+ 
   // Get the device model.
   ifstream model(DEVICE_MODEL_PATH);
   getline(model,state.device_model);
@@ -192,21 +194,26 @@ void loop(){
           DS18B20* device = (DS18B20*)owdevices.get_device(c);
          
           if(c>0)payload<<",";
-          payload << "{\"sensorid\":\"" << owdevices.get_serial(c) << "\",\"temperature\":" << device->get_celsiustemp() << "}";
+          payload << "{\"id\":\"" << owdevices.get_id(c) << "\",\"temperature\":" << device->get_celsiustemp() << "}";
           
         }
       } 
      
 
-      // Check all the thermostats.
-      for(std::vector<thermostat>::iterator i = thermos.begin(); i!=thermos.end(); i++){
-        (*i).check();
-        //TODO: report status
-        payload<<",";
-        payload << "{\"sensorid\":\"" << (*i).get_serial() << "\",\"temperature\":" << (*i).get_temperature() << ",\"heating\":" << (*i).isOn() << "}";
+      // Check all the components.
+      std::map<std::string,component*>::iterator i;
+      for(i = widgets.begin(); i!=widgets.end(); i++){
+
+        if(components::is_family(i->first,"66")) {
+          ((thermostat*)i->second)->check(); // Do the thermostating
+       
+          payload<<",";
+          payload << i->second->get_status();
+        }
       }
 
        payload<<"]";
+       cout<<payload.str()<<endl;
       communicator->publish("telemetry",payload.str());
 
       time(&sensor_timer);
@@ -215,6 +222,12 @@ void loop(){
 }
 
 void cleanup(){
+  
+  std::map<std::string,component*>::iterator i;
+  for(i = widgets.begin(); i!=widgets.end(); i++){
+    delete i->second;
+  }
+  
   if(communicator!=NULL){
     delete communicator;
     mosqpp::lib_cleanup();

@@ -96,7 +96,7 @@ set(SOURCE_FILES source/main.cpp
   source/mqtt.cpp )
 
 add_subdirectory(lib/inih/cpp)
-add_subdirectory(lib/OneWire)
+add_subdirectory(lib/components)
 
 
 #######################################################################################
@@ -106,7 +106,7 @@ add_subdirectory(lib/OneWire)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ${ADDITIONAL_LIBS})
 target_link_libraries(${PROJECT_NAME} inih_pp)
-target_link_libraries(${PROJECT_NAME} OneWire)
+target_link_libraries(${PROJECT_NAME} components)
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_BINARY_DIR})
 
 if(DAEMON)
