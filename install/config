@@ -13,13 +13,15 @@ CHECK_MOUNT_INTERVAL=600
 
 ###############################################################
 # Relays (switches)
-# Pins that have relays connected.
+# Pins that have relays connected. These relays are 
+# independent. If a relay is part of a thermostat, do not
+# add it here.
 ###############################################################
 [relays]
 
-relay1=18
+#relay1=18
 
-relay2=23
+#relay2=23
 
 ###############################################################
 # MQTT
