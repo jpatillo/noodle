@@ -38,7 +38,7 @@ long DS18B20::get_rawtemp(){
     //convert to long
     temp = strtol(value.c_str(),NULL,10);
   }
-  //TODO some kind of error if find doesn't work out
+  else temp = -1;
 
   infile.close();
 
