@@ -18,7 +18,7 @@ const std::string SENSOR_DS18B20_PREFIX = "28";
 
 class OneWireManager {
 
-  std::vector<OneWireDevice*> devicelist_;
+  std::vector<std::string> devicelist_;
 
 public:
 
@@ -28,12 +28,6 @@ public:
   /* Call init before using any other method. Make sure WiringPi has been started. */
   void init();
 
-  void LoadAvailableDevices();
-
-  void UnloadDevices();
-
-  OneWireDevice* get_device(std::string id);
-  OneWireDevice* get_device(int index);
 
   // Returns the index of the device with id in the device list.
   int get_index(std::string id);
@@ -46,17 +40,15 @@ public:
 
   std::string get_id(int index);
 
-  void DebugPrintid(int index);
-  void DebugPrintTemp(int index);
-  void DebugPrintDeviceids();
-  void DebugPrintDeviceTemps();
+
+  bool isDS2401(int index);
+  bool isDS18B20(int index);
 
 protected:
 
   // Gets a list of connected devices from the 1-wire bus
-  void GetDeviceList();
-  bool isDS2401(int index);
-  bool isDS18B20(int index);
+  void load_device_list();
+  
 
 };
 
