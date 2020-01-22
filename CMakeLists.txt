@@ -70,13 +70,13 @@ list(APPEND ADDITIONAL_LIBS ${MOSQUITTO_LIBRARIES})
 message(STATUS "libmosquitto: ${MOSQUITTO_INCLUDE_DIR} ${MOSQUITTO_LIBRARIES}")
 
 # pthreads
-find_package(Threads REQUIRED)
-if(THREADS_HAVE_PTHREAD_ARG)
-	target_compile_options(PUBLIC ${PROJECT_NAME} "-pthread")
-endif()
-if(CMAKE_THREAD_LIBS_INIT)
-	list(APPEND ADDITIONAL_LIBS ${CMAKE_THREAD_LIBS_INIT})
-endif()
+#find_package(Threads REQUIRED)
+#if(THREADS_HAVE_PTHREAD_ARG)
+#	target_compile_options(PUBLIC ${PROJECT_NAME} "-pthread")
+#endif()
+#if(CMAKE_THREAD_LIBS_INIT)
+#	list(APPEND ADDITIONAL_LIBS ${CMAKE_THREAD_LIBS_INIT})
+#endif()
 
 # cURL
 find_package(CURL)
