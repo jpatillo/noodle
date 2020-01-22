@@ -37,6 +37,8 @@ OneWireManager owdevices;
 std::vector<relay> relays;
 
 std::map<std::string,component*> widgets;
+// flags to make sure onewire devices are not included in multiple widgets
+std::vector<int> onewire;
 
 struct conf {
   string device_id;
@@ -45,7 +47,6 @@ struct conf {
   unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
   string broker;
 }state;
-
 
 // Called when user presses Ctrl-C
 void interruptHandler(int sig) {
@@ -64,9 +65,6 @@ int getDId(){
   }
   return 1;
 }
-
-// flags to make sure onewire devices are not included in multiple widgets
-  std::vector<int> onewire;
 
 void appConfig(std::string config_path){
   
@@ -149,7 +147,6 @@ void appConfig(std::string config_path){
 
 }
 
-
 void setup(){
   // Handle ctrl+c
   signal (SIGINT, interruptHandler);
@@ -196,53 +193,27 @@ void setup(){
 
 void loop(){
 
- /*   // Find out what sensors are currently connected
-    if(difftime(time(0),mount_timer) > state.mount_interval) {
-      owdevices.LoadAvailableDevices();
-
-      time(&mount_timer);
-    }
- */
     // Get sensor values
     if(difftime(time(0),sensor_timer) > state.sensor_interval) {
-      // 1-Wire devices
-      ostringstream payload; //since we are only reading from DS18B20, we will batch all of their telemetry and publish at once.
+
+      ostringstream payload;
       payload <<"[";
-
-/*
-      for(int c=0;c<owdevices.count_devices();c++){
-        // DS18B20
-        if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX)){
-          // Timestamp
-          char date[20];
-          get_formatnowdate(date,20);
-
-          DS18B20* device = (DS18B20*)owdevices.get_device(c);
-         
-          if(c>0)payload<<",";
-          payload << "{\"id\":\"" << owdevices.get_id(c) << "\",\"temperature\":" << device->get_celsiustemp() << "}";
-          
-        }
-      } 
-  */
-
-
 
       // Check all the components.
       std::map<std::string,component*>::iterator i;
       for(i = widgets.begin(); i!=widgets.end(); i++){
-
+        // Check thermostat temperature and activate heating/cooling
         if(components::is_family(i->first,"66")) {
-          ((thermostat*)i->second)->check(); // Do the thermostating
+          ((thermostat*)i->second)->check();
         }
-
+        // Gather the telemetry
         if(i!=widgets.begin())
           payload<<",";
         payload << i->second->get_status();
       }
 
-       payload<<"]";
-       cout<<payload.str()<<endl;
+      payload<<"]";
+      if(terminaloutput) cout<<payload.str()<<endl;
       communicator->publish("telemetry",payload.str());
 
       time(&sensor_timer);
@@ -251,16 +222,19 @@ void loop(){
 }
 
 void cleanup(){
-  
+
+  // Widget cleanup
   std::map<std::string,component*>::iterator i;
   for(i = widgets.begin(); i!=widgets.end(); i++){
     delete i->second;
   }
   
+  // MQTT cleanup
   if(communicator!=NULL){
     delete communicator;
     mosqpp::lib_cleanup();
   }
+
 }
 
 int main(void) {
