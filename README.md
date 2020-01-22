@@ -10,6 +10,8 @@ The device currently publishes data frequently. This is desirable for something 
 
 ## TODO
 
+- Monitor OneWire for changes to connected sensors
+  - use inotify on a new thread to check for changes in the mount dir <https://www.thegeekstuff.com/2010/04/inotify-c-program-example/>
 - Shut off heat sources if the temperature reading fails.
 - Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
 
@@ -31,6 +33,8 @@ make
 
 ### Daemon testing
 
+Local testing should be fine for most instances. Daemon testing just makes sure the installation goes well and the services is configured properly.
+
 ```bash
 #!/usr/bin/env bash
 
@@ -39,7 +43,7 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=debug -DDAEMON=ON ../
 make
 sudo make install
-/usr/local/bin/noodle
+sudo systemctl start noodle
 ```
 
 ### Release
