@@ -65,7 +65,12 @@ int getDId(){
   return 1;
 }
 
+// flags to make sure onewire devices are not included in multiple widgets
+  std::vector<int> onewire;
+
 void appConfig(std::string config_path){
+  
+  
  
   INIReader config_reader(config_path);
  
@@ -78,7 +83,8 @@ void appConfig(std::string config_path){
 
   std::set<std::string>::iterator it;
   std::set<std::string> sections = config_reader.GetSections(); //not copying this was giving a segmentation fault
-  
+
+    
   for (it = sections.begin(); it !=sections.end(); ++it)
   {
 
@@ -116,10 +122,15 @@ void appConfig(std::string config_path){
 
       for (field = fields.begin(); field != fields.end(); field++)
       {
-        if(int pin = config_reader.GetInteger((*it), (*field),0)){//could just get the value if 'field' and convert to int
-          //TODO: more pin validity checks
+        //TODO for now we are assuming that all temp sensors are DS18B20
+        int index = owdevices.get_index((*field));
+        int i = onewire.at(index);
+        int pin = config_reader.GetInteger((*it), (*field),0);
+        if(!i && pin){
+          //TODO more pin validity checks
           thermostat* t = new thermostat(*field,pin);
           widgets.insert( pair<std::string,component*>( t->get_id(), t ));
+          onewire.at(index) = 1;
         }
       }
      
@@ -154,7 +165,20 @@ void setup(){
     exit(0);
   }
   
+  //initialize flags for adding onewire sensors to widgets
+  for(int c=0;c<owdevices.count_devices();c++){
+    onewire.push_back(0);
+  }
+
   appConfig(NOODLE_CONFIG_LOCATION);
+
+  // Add OneWire sensors
+ for(int c=0;c<owdevices.count_devices();c++){
+    if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX) && !onewire.at(c)){
+        widgets.insert( pair<std::string,component*>(owdevices.get_id(c) , new DS18B20(owdevices.get_id(c)) ));
+        onewire.at(c) = 1;
+    }
+  }
  
   // Get the device model.
   ifstream model(DEVICE_MODEL_PATH);
@@ -172,18 +196,20 @@ void setup(){
 
 void loop(){
 
-    // Find out what sensors are currently connected
+ /*   // Find out what sensors are currently connected
     if(difftime(time(0),mount_timer) > state.mount_interval) {
       owdevices.LoadAvailableDevices();
 
       time(&mount_timer);
     }
-
+ */
     // Get sensor values
     if(difftime(time(0),sensor_timer) > state.sensor_interval) {
       // 1-Wire devices
       ostringstream payload; //since we are only reading from DS18B20, we will batch all of their telemetry and publish at once.
       payload <<"[";
+
+/*
       for(int c=0;c<owdevices.count_devices();c++){
         // DS18B20
         if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX)){
@@ -198,7 +224,9 @@ void loop(){
           
         }
       } 
-     
+  */
+
+
 
       // Check all the components.
       std::map<std::string,component*>::iterator i;
@@ -206,10 +234,11 @@ void loop(){
 
         if(components::is_family(i->first,"66")) {
           ((thermostat*)i->second)->check(); // Do the thermostating
-       
-          payload<<",";
-          payload << i->second->get_status();
         }
+
+        if(i!=widgets.begin())
+          payload<<",";
+        payload << i->second->get_status();
       }
 
        payload<<"]";
