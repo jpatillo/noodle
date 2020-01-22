@@ -14,6 +14,7 @@ The device currently publishes data frequently. This is desirable for something 
   - use inotify on a new thread to check for changes in the mount dir <https://www.thegeekstuff.com/2010/04/inotify-c-program-example/>
 - Shut off heat sources if the temperature reading fails.
 - Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
+- Status report of software version, device id, connected widgets
 
 ## Build
 
