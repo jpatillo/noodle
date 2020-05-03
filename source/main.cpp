@@ -113,6 +113,7 @@ void appConfig(std::string config_path){
     }
     else if((*it)=="mqtt"){
       state.broker = config_reader.Get("mqtt","BROKER","");
+      state.port = config_reader.Get("mqtt","PORT",1883)
     }
     else if((*it)=="thermostat"){
       std::set<std::string>::iterator field;
@@ -181,9 +182,9 @@ void setup(){
   ifstream model(DEVICE_MODEL_PATH);
   getline(model,state.device_model);
 
-  if(state.broker.length()){
+  if(state.broker.length()) {
     mosqpp::lib_init();//TODO: put this line in the constructor?
-    communicator = new Mqtt(state.device_id,state.broker);
+    communicator = new Mqtt(state.device_id,state.broker,state.port);
   }
 
   // Start timers
@@ -193,31 +194,31 @@ void setup(){
 
 void loop(){
 
-    // Get sensor values
-    if(difftime(time(0),sensor_timer) > state.sensor_interval) {
+  // Get sensor values
+  if(difftime(time(0),sensor_timer) > state.sensor_interval) {
 
-      ostringstream payload;
-      payload <<"[";
+    ostringstream payload;
+    payload <<"[";
 
-      // Check all the components.
-      std::map<std::string,component*>::iterator i;
-      for(i = widgets.begin(); i!=widgets.end(); i++){
-        // Check thermostat temperature and activate heating/cooling
-        if(components::is_family(i->first,"66")) {
-          ((thermostat*)i->second)->check();
-        }
-        // Gather the telemetry
-        if(i!=widgets.begin())
-          payload<<",";
-        payload << i->second->get_status();
+    // Check all the components.
+    std::map<std::string,component*>::iterator i;
+    for(i = widgets.begin(); i!=widgets.end(); i++){
+      // Check thermostat temperature and activate heating/cooling
+      if(components::is_family(i->first,"66")) {
+        ((thermostat*)i->second)->check();
       }
-
-      payload<<"]";
-      if(terminaloutput) cout<<payload.str()<<endl;
-      communicator->publish("telemetry",payload.str());
-
-      time(&sensor_timer);
+      // Gather the telemetry
+      if(i!=widgets.begin())
+        payload<<",";
+      payload << i->second->get_status();
     }
+
+    payload<<"]";
+    if(terminaloutput) cout<<payload.str()<<endl;
+    communicator->publish("telemetry",payload.str());
+
+    time(&sensor_timer);
+  }
 
 }
 
