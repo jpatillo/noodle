@@ -4,7 +4,7 @@ The Noodle Project is a pet snake environment controller. The project does thing
 
 The latest (seemingly) stable build is in the dev branch.
 
-*Just a note:* CMake is a real drain on my life.
+*Just a note:* CMake...not a fan
 
 The device currently publishes data frequently. This is desirable for something like real time reporting. Two minutes seems like an appropriate interval for this project.
 

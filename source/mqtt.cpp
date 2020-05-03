@@ -13,6 +13,7 @@ Mqtt::Mqtt(std::string id, std::string host, int port) : mosquittopp(id.c_str())
     if(loop_start())
         throw "Unable to start connection loop.";
 }
+
 Mqtt::~Mqtt(){
     std::cout << "Stopping the connection." << std::endl;
     disconnect();
