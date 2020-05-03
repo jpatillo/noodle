@@ -46,6 +46,7 @@ struct conf {
   unsigned int sensor_interval = DEFAULT_SENSOR_INTERVAL;
   unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
   string broker;
+  unsigned int port;
 }state;
 
 // Called when user presses Ctrl-C
@@ -113,7 +114,7 @@ void appConfig(std::string config_path){
     }
     else if((*it)=="mqtt"){
       state.broker = config_reader.Get("mqtt","BROKER","");
-      state.port = config_reader.Get("mqtt","PORT",1883)
+      state.port = config_reader.GetInteger("mqtt","PORT",1883);
     }
     else if((*it)=="thermostat"){
       std::set<std::string>::iterator field;
