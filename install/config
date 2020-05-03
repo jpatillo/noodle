@@ -30,7 +30,7 @@ CHECK_MOUNT_INTERVAL=600
 [mqtt]
 
 BROKER=mqtt.jamespatillo.com
-PORT=8883
+#PORT=8883
 
 ###############################################################
 # Thermostat
