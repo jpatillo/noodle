@@ -1,5 +1,6 @@
 #include "thermostat.h"
 #include <sstream>
+#include "utils.h"
 
 thermostat::thermostat(DS18B20 temp, relay onoff):component(id_creator(temp,onoff)),_temp(temp),_relay(onoff){}
 thermostat::~thermostat(){}
@@ -22,6 +23,10 @@ std::string thermostat::id_creator(DS18B20 temp, relay onoff){
 
 std::string thermostat::get_status(){
     std::ostringstream ostr;
-    ostr << "{\"id\":\"" << get_id() << "\",\"active\":" << _relay.isOn() << ",\"temperature\":" << _temp.get_celsiustemp() << "}";
+    ostr << "{\"sensor_id\":\"" << get_id() 
+        << "\",\"active\":" << _relay.isOn() 
+        << ",\"temperature\":" << _temp.get_celsiustemp() 
+        << ",\"device_time\":\"" << components::date_time() 
+        << "\"}";
     return ostr.str();
 }
