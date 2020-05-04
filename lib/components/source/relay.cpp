@@ -22,6 +22,6 @@
 
     std::string relay::get_status(){
         std::ostringstream ostr;
-        ostr << "{\"id\":\"" << get_id() << "\",\"active\":" << isOn() << "}";
+        ostr << "{\"sensor_id\":\"" << get_id() << "\",\"active\":" << isOn() << "}";
         return ostr.str();
     }
