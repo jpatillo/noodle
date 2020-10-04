@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 project(noodle)
 
-# check C++11 support
+# Require C++11 support
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 if(COMPILER_SUPPORTS_CXX11)

@@ -16,6 +16,10 @@ The device currently publishes data frequently. This is desirable for something 
 - Shut off heat sources if the program is not running. Supply power to relay from device? Will the relay auto-trip?
 - Status report of software version, device id, connected widgets
 
+## Requirements
+
+- C++ 11
+
 ## Build
 
 For testing, use run.sh.
@@ -50,11 +54,3 @@ sudo systemctl start noodle
 ### Release
 
 `./build.sh`
-
-## Resources
-
-### Mosquitto
-
-- man <https://mosquitto.org/api/files/mosquitto-h.html#mosquitto_loop_start>
-- cpp header reference <https://github.com/iosphere/mosquitto/blob/master/lib/cpp/mosquittopp.h>
-- cpp example <https://github.com/eclipse/mosquitto/blob/master/examples/temperature_conversion/main.cpp>
