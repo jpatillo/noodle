@@ -1,62 +1,21 @@
 // Program Entry
 
-#include <iostream>
-#include <sstream>
-#include <utility>
-#include <fstream>
+#include "main.h"
 
-#include <signal.h>         // Handle Ctrl-C
-#include <time.h>
-#include <unistd.h>
-#include <wiringPi.h>       // GPIO
-#include <mosquittopp.h>
 
-#include "include/config.h"
+int main(void) {
+  setup();
+  while(seagulls) { loop(); }
+  cleanup();
+  return 0;
+}
 
-#include "res/strings.h"
-#include "res/integers.h"
-#include "util.h"
-#include "mqtt.h"
-#include <INIReader.h>
-#include <OneWireManager.h> // DS18B20, DS2401
-#include <DS18B20.h>
-#include "relay.h"
-#include "thermostat.h"
-#include <map>
-#include "utils.h"
-
-using namespace std;// To use or not to use...
-
-#define terminaloutput true
-
-int8_t volatile seagulls = 1; // loop control
-time_t sensor_timer, mount_timer;
-
-Mqtt* communicator;
-OneWireManager owdevices;
-std::vector<relay> relays;
-
-std::map<std::string,component*> widgets;
-// flags to make sure onewire devices are not included in multiple widgets
-std::vector<int> onewire;
-
-struct conf {
-  string device_id;
-  string device_model;
-  unsigned int sensor_interval = DEFAULT_SENSOR_INTERVAL;
-  unsigned int mount_interval = DEFAULT_MOUNT_INTERVAL;
-  string broker;
-  unsigned int port;
-}state;
-
-// Called when user presses Ctrl-C
 void interruptHandler(int sig) {
   if(sig==SIGINT) {
     seagulls = 0;
   }
 }
 
-// Get the Device Id
 int getDId(){
   for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS2401_PREFIX)){
@@ -69,16 +28,14 @@ int getDId(){
 
 void appConfig(std::string config_path){
   
-  
- 
   INIReader config_reader(config_path);
  
   if(config_reader.ParseError() || config_reader.GetSections().empty()){
-    cout<<"Error reading config.";
+    LOG("Error reading config.");
     exit(0);
   }
 
-  cout<<"Found "<<config_reader.GetSections().size()<<" sections."<<endl;
+  std::cout<<"Found "<<config_reader.GetSections().size()<<" sections."<<std::endl;
 
   std::set<std::string>::iterator it;
   std::set<std::string> sections = config_reader.GetSections(); //not copying this was giving a segmentation fault
@@ -103,10 +60,10 @@ void appConfig(std::string config_path){
     }
     else if((*it)=="timers"){
       int timz = config_reader.GetInteger((*it),"CHECK_SENSOR_INTERVAL",DEFAULT_SENSOR_INTERVAL);
-      cout<<"config sensor interval "<<timz;
+      std::cout<<"config sensor interval "<<timz;
       if(timz>MAX_SENSOR_INTERVAL || timz<MIN_SENSOR_INTERVAL)timz=DEFAULT_SENSOR_INTERVAL;
       state.sensor_interval = timz;
-      cout<<" saved sensor interval "<< state.sensor_interval;
+      std::cout<<" saved sensor interval "<< state.sensor_interval;
 
       timz = config_reader.GetInteger((*it),"CHECK_MOUNT_INTERVAL",DEFAULT_MOUNT_INTERVAL);
       if(timz>MAX_MOUNT_INTERVAL || timz<MIN_MOUNT_INTERVAL)timz=DEFAULT_MOUNT_INTERVAL;
@@ -129,7 +86,7 @@ void appConfig(std::string config_path){
         if(!i && pin){
           //TODO more pin validity checks
           thermostat* t = new thermostat(*field,pin);
-          widgets.insert( pair<std::string,component*>( t->get_id(), t ));
+          widgets.insert( std::pair<std::string,component*>( t->get_id(), t ));
           onewire.at(index) = 1;
         }
       }
@@ -142,7 +99,7 @@ void appConfig(std::string config_path){
     
     }
     else {
-      cout << "Unknown configuration." << endl;
+      LOG("Unknown configuration.");
     }
 
   }
@@ -160,7 +117,7 @@ void setup(){
   owdevices.init();
 
   if(getDId()>0) {
-    cerr<<"ERROR: Device Id not found.";
+    std::cerr<<"ERROR: Device Id not found.";
     exit(0);
   }
   
@@ -174,13 +131,13 @@ void setup(){
   // Add OneWire sensors
  for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX) && !onewire.at(c)){
-        widgets.insert( pair<std::string,component*>(owdevices.get_id(c) , new DS18B20(owdevices.get_id(c)) ));
+        widgets.insert( std::pair<std::string,component*>(owdevices.get_id(c) , new DS18B20(owdevices.get_id(c)) ));
         onewire.at(c) = 1;
     }
   }
  
   // Get the device model.
-  ifstream model(DEVICE_MODEL_PATH);
+  std::ifstream model(DEVICE_MODEL_PATH);
   getline(model,state.device_model);
 
   if(state.broker.length()) {
@@ -198,7 +155,7 @@ void loop(){
   // Get sensor values
   if(difftime(time(0),sensor_timer) > state.sensor_interval) {
 
-    ostringstream payload;
+    std::ostringstream payload;
     payload <<"[";
 
     // Check all the components.
@@ -215,7 +172,7 @@ void loop(){
     }
 
     payload<<"]";
-    if(terminaloutput) cout<<payload.str()<<endl;
+    LOG(payload.str());
     communicator->publish("telemetry",payload.str());
 
     time(&sensor_timer);
@@ -239,9 +196,4 @@ void cleanup(){
 
 }
 
-int main(void) {
-  setup();
-  while(seagulls) { loop(); }
-  cleanup();
-  return 0;
-}
+
