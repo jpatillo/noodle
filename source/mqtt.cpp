@@ -1,10 +1,22 @@
 #include <iostream>
+#include <sstream>
 #include "mqtt.h"
 
+std::string online_publish_builder(bool isOnline){
+    std::ostringstream will_payload;
+    will_payload << "{\"online\":" << isOnline << "}";
+    return will_payload.str();
+}
 
 Mqtt::Mqtt(std::string id, std::string host, int port) : mosquittopp(id.c_str()) {
     _id = id;
     int keepalive = 120;
+
+    //Create a will that tells the broker to publish this client is disconnected if there is a connection error.
+    std::string will = "noodle/"+id+"/status";
+    std::string will_payload = online_publish_builder(false);
+    will_set(will.c_str(),will_payload.length(),will_payload.c_str(),1,false);
+
     // Connect to the broker
 
     if(connect_async(host.c_str(),port,keepalive))
@@ -26,8 +38,7 @@ void Mqtt::on_connect(int rc) {
         // Subscribe to topics here.
         // ...
 
-        std::string status = "{\"msg\":\"connected\"}";
-        publish("status",status);
+        publish_connected(true);
     } else {
         //TODO output to stderr?
         std::cout<<"Connect failed"<<std::endl;
@@ -36,6 +47,7 @@ void Mqtt::on_connect(int rc) {
 }
 void Mqtt::on_disconnect(int result)
 {
+    publish_connected(false);
     if(result) // result is 0 iff we requested the disconnect
     {
         switch(reconnect_async())
@@ -71,5 +83,13 @@ void Mqtt::on_log(int level, const char *str)
 int Mqtt::publish(const std::string topic, const std::string message) {
     std::string t = "noodle/" + _id + "/" + topic;
     mosquittopp::publish(NULL, t.c_str(), message.length(), message.c_str(), 0, false);
+    std::cout<<"publish "<<topic<<" "<<message<<std::endl;
     return 0;//TODO: error checking
+}
+
+/**
+ * Convenience function for publishing whether the device is online.
+ */ 
+int Mqtt::publish_connected(bool isConnected){
+    return publish("status",online_publish_builder(isConnected));
 }

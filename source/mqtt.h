@@ -19,6 +19,7 @@ public:
 
     int publish(const std::string topic, const std::string message="");
 
+    int publish_connected(bool isConnected);
 };
 
 #endif
