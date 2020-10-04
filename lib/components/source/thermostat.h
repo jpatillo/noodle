@@ -22,6 +22,7 @@ public:
     ~thermostat();
     void setMaxTemperature(int temp);
     void setMinTemperature(int temp);
+    void setTemperatureBounds(int high, int low);
     void check();
     bool isOn();
     double get_temperature();

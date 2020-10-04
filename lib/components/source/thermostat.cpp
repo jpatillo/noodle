@@ -6,6 +6,7 @@ thermostat::thermostat(DS18B20 temp, relay onoff):component(id_creator(temp,onof
 thermostat::~thermostat(){}
 void thermostat::setMaxTemperature(int temp){_hi=temp;}
 void thermostat::setMinTemperature(int temp){_lo=temp;}
+void thermostat::setTemperatureBounds(int high, int low){setMaxTemperature(high);setMinTemperature(low);}
 void thermostat::check(){
     if(_temp.get_rawtemp()>_hi)_relay.off();
     else if(_temp.get_rawtemp()<_lo)_relay.on();
