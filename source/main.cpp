@@ -2,18 +2,50 @@
 
 #include "main.h"
 
-
 int main(void) {
+ // daemonize();
   setup();
-  while(seagulls) { loop(); }
+  syslog(LOG_DEBUG,"Enter the loop.");
+  while(seagulls) { loop(); sleep(SLEEP_INTERVAL);}
   cleanup();
   return 0;
 }
 
 void interruptHandler(int sig) {
-  if(sig==SIGINT) {
+  switch(sig)
+  {
+    case SIGINT:
+    syslog(LOG_DEBUG, "Received SIGINT.");
     seagulls = 0;
+    break;
+    case SIGTERM:
+      syslog(LOG_DEBUG, "Received SIGTERM.");
+      seagulls = 0;
+      break;
   }
+}
+
+void initSig(){
+    struct sigaction newSigAction;
+    sigset_t newSigSet;
+
+    /* Set signal mask - signals we want to block */
+    sigemptyset(&newSigSet);
+    sigaddset(&newSigSet, SIGCHLD);  /* ignore child - i.e. we don't need to wait for it */
+    sigaddset(&newSigSet, SIGTSTP);  /* ignore Tty stop signals */
+    sigaddset(&newSigSet, SIGTTOU);  /* ignore Tty background writes */
+    sigaddset(&newSigSet, SIGTTIN);  /* ignore Tty background reads */
+    sigprocmask(SIG_BLOCK, &newSigSet, NULL);   /* Block the above specified signals */
+
+    /* Set up a signal handler */
+    newSigAction.sa_handler = interruptHandler;
+    sigemptyset(&newSigAction.sa_mask);
+    newSigAction.sa_flags = 0;
+
+    /* Signals to handle */
+    sigaction(SIGHUP, &newSigAction, NULL);     /* catch hangup signal */
+    sigaction(SIGTERM, &newSigAction, NULL);    /* catch term signal */
+    sigaction(SIGINT, &newSigAction, NULL);     /* catch interrupt signal */
 }
 
 int getDId(){
@@ -31,11 +63,11 @@ void appConfig(std::string config_path){
   INIReader config_reader(config_path);
  
   if(config_reader.ParseError() || config_reader.GetSections().empty()){
-    LOG("Error reading config.");
+    syslog(LOG_ERR,"Error reading config.");
     exit(0);
   }
 
-  std::cout<<"Found "<<config_reader.GetSections().size()<<" sections."<<std::endl;
+  syslog(LOG_DEBUG,"Found %i config sections.",config_reader.GetSections().size());
 
   std::set<std::string>::iterator it;
   std::set<std::string> sections = config_reader.GetSections(); //not copying this was giving a segmentation fault
@@ -59,13 +91,13 @@ void appConfig(std::string config_path){
       }
     }
     else if((*it)=="timers"){
-      int timz = config_reader.GetInteger((*it),"CHECK_SENSOR_INTERVAL",DEFAULT_SENSOR_INTERVAL);
-      std::cout<<"config sensor interval "<<timz;
+      int timz = config_reader.GetInteger((*it),CHECK_SENSORS_INTERVAL_KEY,DEFAULT_SENSOR_INTERVAL);
+      syslog(LOG_DEBUG,"config sensor interval %d",timz);
       if(timz>MAX_SENSOR_INTERVAL || timz<MIN_SENSOR_INTERVAL)timz=DEFAULT_SENSOR_INTERVAL;
       state.sensor_interval = timz;
-      std::cout<<" saved sensor interval "<< state.sensor_interval;
+      syslog(LOG_DEBUG," saved sensor interval %d", state.sensor_interval);
 
-      timz = config_reader.GetInteger((*it),"CHECK_MOUNT_INTERVAL",DEFAULT_MOUNT_INTERVAL);
+      timz = config_reader.GetInteger((*it),CHECK_MOUNT_INTERVAL_KEY,DEFAULT_MOUNT_INTERVAL);
       if(timz>MAX_MOUNT_INTERVAL || timz<MIN_MOUNT_INTERVAL)timz=DEFAULT_MOUNT_INTERVAL;
       state.mount_interval = timz;
     }
@@ -99,7 +131,7 @@ void appConfig(std::string config_path){
     
     }
     else {
-      LOG("Unknown configuration.");
+      syslog(LOG_WARNING,"Unknown configuration.");
     }
 
   }
@@ -107,8 +139,14 @@ void appConfig(std::string config_path){
 }
 
 void setup(){
+  // Open syslog
+  setlogmask(LOG_UPTO(LOG_INFO));
+  openlog(DAEMON_NAME.c_str(), 0, LOG_DAEMON);
+  syslog(LOG_DEBUG, "Setting up");
+
+  initSig();
   // Handle ctrl+c
-  signal (SIGINT, interruptHandler);
+  //signal (SIGINT, interruptHandler);
 
   // Initialize GPIO
   wiringPiSetupGpio();// TODO error check
@@ -117,7 +155,7 @@ void setup(){
   owdevices.init();
 
   if(getDId()>0) {
-    std::cerr<<"ERROR: Device Id not found.";
+    syslog(LOG_ERR,"ERROR: Device Id not found.");
     exit(0);
   }
   
@@ -129,10 +167,10 @@ void setup(){
   appConfig(NOODLE_CONFIG_LOCATION);
 
   // Add OneWire sensors
- for(int c=0;c<owdevices.count_devices();c++){
+  for(int c=0;c<owdevices.count_devices();c++){
     if(owdevices.is_family(c, SENSOR_DS18B20_PREFIX) && !onewire.at(c)){
-        widgets.insert( std::pair<std::string,component*>(owdevices.get_id(c) , new DS18B20(owdevices.get_id(c)) ));
-        onewire.at(c) = 1;
+      widgets.insert( std::pair<std::string,component*>(owdevices.get_id(c) , new DS18B20(owdevices.get_id(c)) ));
+      onewire.at(c) = 1;
     }
   }
  
@@ -172,7 +210,7 @@ void loop(){
     }
 
     payload<<"]";
-    LOG(payload.str());
+    syslog(LOG_DEBUG,payload.str().c_str());
     communicator->publish("telemetry",payload.str());
 
     time(&sensor_timer);
@@ -181,6 +219,8 @@ void loop(){
 }
 
 void cleanup(){
+  syslog(LOG_INFO, "Daemon exiting");
+  closelog();
 
   // Widget cleanup
   std::map<std::string,component*>::iterator i;

@@ -1,6 +1,7 @@
 #ifndef MQTT_H_
 #define MQTT_H_
 
+#include <syslog.h>
 #include <mosquittopp.h>
 #include <string>
 

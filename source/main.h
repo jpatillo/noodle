@@ -1,9 +1,10 @@
-#include <iostream>
 #include <sstream>
 #include <utility>
 #include <fstream>
 #include <string>
 
+#include <sys/stat.h>
+#include <syslog.h>
 #include <signal.h>         // Handle Ctrl-C
 #include <time.h>
 #include <unistd.h>
@@ -25,12 +26,6 @@
 #include "utils.h"
 
 #define DEBUG 0
-
-
-void LOG(std::string x) {if(DEBUG)std::cout << x << std::endl;}
-
-//using namespace std;// To use or not to use...
-
 
 
 int8_t volatile seagulls = 1; // loop control
@@ -59,6 +54,7 @@ struct conf {
  * Ctrl+c - quit
  */
 void interruptHandler(int sig);
+void daemonize();
 /** Get Device ID */
 int getDId();
 /** Read config file and set application state. */

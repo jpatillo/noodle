@@ -1,4 +1,3 @@
-#include <iostream>
 #include <sstream>
 #include "mqtt.h"
 
@@ -27,21 +26,21 @@ Mqtt::Mqtt(std::string id, std::string host, int port) : mosquittopp(id.c_str())
 }
 
 Mqtt::~Mqtt(){
-    std::cout << "Stopping the connection." << std::endl;
+    syslog(LOG_INFO, "Stopping the connection.");
     disconnect();
 }
 
 void Mqtt::on_connect(int rc) {
-    std::cout<<"MQTT connect attempt with code "<<rc<<std::endl;
+    syslog(LOG_INFO,"MQTT connect attempt with code %i", rc);
     if(!rc){
-        std::cout<<"Connection successful."<<std::endl;
+        syslog(LOG_INFO, "MQTT connection successful.");
         // Subscribe to topics here.
         // ...
 
         publish_connected(true);
     } else {
         //TODO output to stderr?
-        std::cout<<"Connect failed"<<std::endl;
+        syslog(LOG_ERR, "MQTT connection failed.");
     }
 
 }
@@ -71,7 +70,8 @@ void Mqtt::on_subscribe(int mid, int qos_count, const int *granted_qos){
 void Mqtt::on_log(int level, const char *str)
 {
 	/* Print all log messages regardless of level. */
-	printf("\e[32m%s\e[0m %s\n", "LOG",str);
+	//printf("\e[32m%s\e[0m %s\n", "LOG",str);
+    syslog(LOG_DEBUG,str);
 
     // Get these on a server!
     //mosquitto_publish(	mosq, NULL, "garage/34567/log", strlen(str), str, 0, false);
@@ -83,7 +83,6 @@ void Mqtt::on_log(int level, const char *str)
 int Mqtt::publish(const std::string topic, const std::string message) {
     std::string t = "noodle/" + _id + "/" + topic;
     mosquittopp::publish(NULL, t.c_str(), message.length(), message.c_str(), 0, false);
-    std::cout<<"publish "<<topic<<" "<<message<<std::endl;
     return 0;//TODO: error checking
 }
 
