@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 # Get system updates
-sudo apt-get update
-sudo apt-get upgrade
+#sudo apt-get update
+#sudo apt-get upgrade
 
 # Install Mosquitto
-sudo apt-get install libmosquitto-dev libmosquittopp-dev libssl-dev -y
+#sudo apt-get install libmosquitto-dev libmosquittopp-dev libssl-dev -y
 
 # Shutdown and cleanup old installation
 systemctl stop noodle

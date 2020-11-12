@@ -113,7 +113,11 @@ if(DAEMON)
   set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS "DAEMON=1")
 
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+  # syslog config
+  install(FILES "${CMAKE_SOURCE_DIR}/install/noodle.conf" DESTINATION /etc/rsyslog.d)
+  # internal config
   install(FILES "${CMAKE_SOURCE_DIR}/install/config" DESTINATION ${NOODLE_CONFIG_LOCATION})
+  # daemon system config
   install(FILES "${CMAKE_SOURCE_DIR}/install/noodle.service" DESTINATION /etc/systemd/system)
 
 else()
